@@ -7,6 +7,9 @@ let deceleration = 0.9
 let player_speed = 20
 let player_shot_speed = -100
 let enemy_shot_speed = 70
+//  GH1
+let powerup_overheated = false
+//  end GH1
 //  sprites
 let ship = sprites.create(assets.image`ship`, SpriteKind.Player)
 ship.y = 108
@@ -15,6 +18,12 @@ ship.setStayInScreen(true)
 let formation_center = sprites.create(image.create(1, 1))
 formation_center.setBounceOnWall(true)
 formation_center.setVelocity(randint(-10, 10), randint(-10, 10))
+//  GH1
+let powerup_bar = statusbars.create(60, 3, StatusBarKind.Magic)
+powerup_bar.setPosition(128, 118)
+powerup_bar.max = 100
+powerup_bar.value = 0
+//  end GH1
 //  setup
 info.setLife(3)
 info.setScore(0)
@@ -44,6 +53,12 @@ game.onUpdateInterval(7500, function spawn_wave() {
     }
 })
 sprites.onOverlap(SpriteKind.Projectile, SpriteKind.Enemy, function destroy_enemy(projectile: Sprite, enemy: Sprite) {
+    //  GH1
+    if (!powerup_overheated) {
+        powerup_bar.value += 5
+    }
+    
+    //  end GH1
     info.changeScoreBy(100)
     projectile.destroy()
     enemy.destroy(effects.fire, 100)
@@ -58,6 +73,49 @@ sprites.onOverlap(SpriteKind.Player, SpriteKind.enemy_projectile, player_hit)
 controller.A.onEvent(ControllerButtonEvent.Pressed, function player_fire() {
     sprites.createProjectileFromSprite(assets.image`player projectile`, ship, 0, player_shot_speed)
 })
+//  GH1
+function fire_at_angle(angle: number) {
+    let angle_in_radians = spriteutils.degreesToRadians(angle)
+    let projectile = sprites.create(assets.image`player projectile`, SpriteKind.Projectile)
+    projectile.setPosition(ship.x, ship.y)
+    projectile.setFlag(SpriteFlag.AutoDestroy, true)
+    spriteutils.setVelocityAtAngle(projectile, angle_in_radians, player_shot_speed)
+    music.thump.play()
+    pause(20)
+}
+
+controller.B.onEvent(ControllerButtonEvent.Pressed, function burst_fire() {
+    let launch_angle: number;
+    let j: number;
+    
+    if (powerup_bar.value == powerup_bar.max) {
+        powerup_overheated = true
+        powerup_bar.value = 0
+        powerup_bar.setColor(2, 2)
+        launch_angle = 0
+        for (let i = 0; i < 2; i++) {
+            for (j = 0; j < 18; j++) {
+                launch_angle += 10
+                fire_at_angle(launch_angle)
+            }
+            for (j = 0; j < 18; j++) {
+                launch_angle -= 10
+                fire_at_angle(launch_angle)
+            }
+        }
+        powerup_cooldown()
+    }
+    
+})
+function powerup_cooldown() {
+    
+    pause(5000)
+    powerup_overheated = false
+    powerup_bar.setColor(8, 11)
+    music.jumpUp.play()
+}
+
+//  end GH1
 function player_movement() {
     if (controller.left.isPressed()) {
         ship.vx -= player_speed
