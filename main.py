@@ -81,6 +81,13 @@ def fire_at_angle(angle):
     music.thump.play()
     pause(20)
 
+def powerup_cooldown():
+    global powerup_overheated
+    pause(5000)
+    powerup_overheated = False
+    powerup_bar.set_color(8, 11)
+    music.jump_up.play()
+
 def burst_fire():
     global powerup_overheated
     if powerup_bar.value == powerup_bar.max:
@@ -97,13 +104,6 @@ def burst_fire():
                 fire_at_angle(launch_angle)
         powerup_cooldown()
 controller.B.on_event(ControllerButtonEvent.PRESSED, burst_fire)
-
-def powerup_cooldown():
-    global powerup_overheated
-    pause(5000)
-    powerup_overheated = False
-    powerup_bar.set_color(8, 11)
-    music.jump_up.play()
 # end GH1
 
 def player_movement():

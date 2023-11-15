@@ -84,6 +84,14 @@ function fire_at_angle(angle: number) {
     pause(20)
 }
 
+function powerup_cooldown() {
+    
+    pause(5000)
+    powerup_overheated = false
+    powerup_bar.setColor(8, 11)
+    music.jumpUp.play()
+}
+
 controller.B.onEvent(ControllerButtonEvent.Pressed, function burst_fire() {
     let launch_angle: number;
     let j: number;
@@ -107,14 +115,6 @@ controller.B.onEvent(ControllerButtonEvent.Pressed, function burst_fire() {
     }
     
 })
-function powerup_cooldown() {
-    
-    pause(5000)
-    powerup_overheated = false
-    powerup_bar.setColor(8, 11)
-    music.jumpUp.play()
-}
-
 //  end GH1
 function player_movement() {
     if (controller.left.isPressed()) {
