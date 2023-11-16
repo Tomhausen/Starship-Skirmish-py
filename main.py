@@ -49,7 +49,7 @@ def spawn_wave():
     start_y = randint(0, 90)
     for i in range(randint(3, 6)):
         spawn_enemy(start_x, start_y)
-game.on_update_interval(7500, spawn_wave)
+game.on_update_interval(5000, spawn_wave)
 
 def destroy_enemy(projectile, enemy):
     # GH1

@@ -45,7 +45,7 @@ function spawn_enemy(start_x: number, start_y: number) {
     set_offset(enemy)
 }
 
-game.onUpdateInterval(7500, function spawn_wave() {
+game.onUpdateInterval(5000, function spawn_wave() {
     let start_x = randint(0, 1) * 160
     let start_y = randint(0, 90)
     for (let i = 0; i < randint(3, 6); i++) {
