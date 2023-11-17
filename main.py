@@ -1,6 +1,9 @@
 @namespace
 class SpriteKind:
     enemy_projectile = SpriteKind.create()
+    # GH2
+    boss = SpriteKind.create()
+    # end GH2
 
 # variables
 deceleration = 0.9
@@ -31,6 +34,7 @@ info.set_life(3)
 info.set_score(0)
 effects.star_field.start_screen_effect()
 
+# maybe worth refactoring method to allow boss to utilise as well?
 def set_offset(enemy: Sprite):
     x_offset = randint(-4, 4) * 16
     y_offset = randint(-3, 1) * 16
@@ -49,7 +53,21 @@ def spawn_wave():
     start_y = randint(0, 90)
     for i in range(randint(3, 6)):
         spawn_enemy(start_x, start_y)
-game.on_update_interval(5000, spawn_wave)
+game.on_update_interval(7500, spawn_wave)
+
+# GH2
+def spawn_boss():
+    boss = sprites.create(assets.image("boss"), SpriteKind.boss)
+    boss.set_position(randint(20, 140), -20)
+    boss.z = -5
+    sprites.set_data_number(boss, "x_offset", randint(-50, 50))
+    sprites.set_data_number(boss, "y_offset", randint(-5, -25))
+    boss_healthbar = statusbars.create(50, 4, StatusBarKind.health)
+    boss_healthbar.attach_to_sprite(boss, -5)
+    boss_healthbar.max = 100
+    boss_healthbar.value = boss_healthbar.max
+info.on_score(5000, spawn_boss)
+# end GH2
 
 def destroy_enemy(projectile, enemy):
     # GH1
@@ -60,6 +78,17 @@ def destroy_enemy(projectile, enemy):
     projectile.destroy()
     enemy.destroy(effects.fire, 100)
 sprites.on_overlap(SpriteKind.projectile, SpriteKind.enemy, destroy_enemy)
+
+# GH2
+def boss_hit(projectile, boss):
+    boss_healthbar = statusbars.get_status_bar_attached_to(StatusBarKind.health, boss)
+    boss_healthbar.value -= 2
+    powerup_bar.value += 5
+    if boss_healthbar.value < 1:
+        boss.destroy(effects.fire)
+    projectile.destroy()
+sprites.on_overlap(SpriteKind.projectile, SpriteKind.boss, boss_hit)
+# end GH2
 
 def player_hit(player, enemy):
     info.change_life_by(-1)
@@ -81,13 +110,6 @@ def fire_at_angle(angle):
     music.thump.play()
     pause(20)
 
-def powerup_cooldown():
-    global powerup_overheated
-    pause(5000)
-    powerup_overheated = False
-    powerup_bar.set_color(8, 11)
-    music.jump_up.play()
-
 def burst_fire():
     global powerup_overheated
     if powerup_bar.value == powerup_bar.max:
@@ -104,6 +126,13 @@ def burst_fire():
                 fire_at_angle(launch_angle)
         powerup_cooldown()
 controller.B.on_event(ControllerButtonEvent.PRESSED, burst_fire)
+
+def powerup_cooldown():
+    global powerup_overheated
+    pause(5000)
+    powerup_overheated = False
+    powerup_bar.set_color(8, 11)
+    music.jump_up.play()
 # end GH1
 
 def player_movement():
@@ -130,6 +159,19 @@ def enemy_behaviour():
             enemy_fire(enemy)
         update_enemy_position(enemy, formation_center)
 
+# GH2
+def boss_behaviour():
+    boss_sprite = sprites.all_of_kind(SpriteKind.boss)[0]
+    update_enemy_position(boss_sprite, formation_center)
+    if randint(0, 120) == 120:
+        sprites.set_data_number(boss_sprite, "x_offset", randint(-50, 50))
+        sprites.set_data_number(boss_sprite, "y_offset", randint(-5, -25))
+    if randint(0, 60) == 60:
+        enemy_fire(boss_sprite)
+        lasers = sprites.all_of_kind(SpriteKind.enemy_projectile)
+        lasers[len(lasers) - 1].scale = 5
+# end GH2
+
 def constrain_formation_position():
     if formation_center.x < 70:
         formation_center.vx = randint(5, 10)
@@ -144,5 +186,9 @@ def tick():
     player_movement()
     if len(sprites.all_of_kind(SpriteKind.enemy)) > 0:
         enemy_behaviour()
+    # GH2
+    if len(sprites.all_of_kind(SpriteKind.boss)) > 0:
+        boss_behaviour()
+    # end GH2
     constrain_formation_position()
 game.on_update(tick)
