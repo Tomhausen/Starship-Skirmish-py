@@ -31,7 +31,6 @@ powerup_bar.value = 0
 info.setLife(3)
 info.setScore(0)
 effects.starField.startScreenEffect()
-//  maybe worth refactoring method to allow boss to utilise as well?
 function set_offset(enemy: Sprite) {
     let x_offset = randint(-4, 4) * 16
     let y_offset = randint(-3, 1) * 16
@@ -70,12 +69,18 @@ info.onScore(5000, function spawn_boss() {
 })
 //  end GH2
 sprites.onOverlap(SpriteKind.Projectile, SpriteKind.Enemy, function destroy_enemy(projectile: Sprite, enemy: Sprite) {
-    //  GH1
+    let shield: Sprite;
+    if (randint(1, 10) == 1 && sprites.allOfKind(SpriteKind.Food).length < 1) {
+        shield = sprites.create(assets.image`shield falling`, SpriteKind.Food)
+        shield.setPosition(enemy.x, enemy.y)
+        shield.setVelocity(0, 50)
+        shield.setFlag(SpriteFlag.AutoDestroy, true)
+    }
+    
     if (!powerup_overheated) {
         powerup_bar.value += 5
     }
     
-    //  end GH1
     info.changeScoreBy(100)
     projectile.destroy()
     enemy.destroy(effects.fire, 100)
@@ -87,6 +92,7 @@ sprites.onOverlap(SpriteKind.Projectile, SpriteKind.boss, function boss_hit(proj
     powerup_bar.value += 5
     if (boss_healthbar.value < 1) {
         boss.destroy(effects.fire)
+        info.changeScoreBy(2500)
     }
     
     projectile.destroy()
@@ -99,6 +105,20 @@ function player_hit(player: Sprite, enemy: Sprite) {
 
 sprites.onOverlap(SpriteKind.Player, SpriteKind.Enemy, player_hit)
 sprites.onOverlap(SpriteKind.Player, SpriteKind.enemy_projectile, player_hit)
+sprites.onOverlap(SpriteKind.Player, SpriteKind.Food, function activate_shield(player: Sprite, shield: Sprite) {
+    shield.setPosition(player.x, player.y)
+    shield.follow(player, 500, 500)
+    shield.setImage(assets.image`shield`)
+    shield.scale = 2
+    shield.z = 10
+})
+sprites.onOverlap(SpriteKind.enemy_projectile, SpriteKind.Food, function destroy_shield(projectile: Sprite, shield: Sprite) {
+    if (shield.overlapsWith(ship)) {
+        shield.destroy(effects.disintegrate)
+        projectile.destroy()
+    }
+    
+})
 controller.A.onEvent(ControllerButtonEvent.Pressed, function player_fire() {
     sprites.createProjectileFromSprite(assets.image`player projectile`, ship, 0, player_shot_speed)
 })

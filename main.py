@@ -34,7 +34,6 @@ info.set_life(3)
 info.set_score(0)
 effects.star_field.start_screen_effect()
 
-# maybe worth refactoring method to allow boss to utilise as well?
 def set_offset(enemy: Sprite):
     x_offset = randint(-4, 4) * 16
     y_offset = randint(-3, 1) * 16
@@ -70,10 +69,13 @@ info.on_score(5000, spawn_boss)
 # end GH2
 
 def destroy_enemy(projectile, enemy):
-    # GH1
+    if randint(1, 10) == 1 and len(sprites.all_of_kind(SpriteKind.food)) < 1: 
+        shield = sprites.create(assets.image("shield falling"), SpriteKind.food) 
+        shield.set_position(enemy.x, enemy.y) 
+        shield.set_velocity(0, 50) 
+        shield.set_flag(SpriteFlag.AUTO_DESTROY, True)
     if not powerup_overheated:
         powerup_bar.value += 5
-    # end GH1
     info.change_score_by(100)
     projectile.destroy()
     enemy.destroy(effects.fire, 100)
@@ -86,6 +88,7 @@ def boss_hit(projectile, boss):
     powerup_bar.value += 5
     if boss_healthbar.value < 1:
         boss.destroy(effects.fire)
+        info.change_score_by(2500)
     projectile.destroy()
 sprites.on_overlap(SpriteKind.projectile, SpriteKind.boss, boss_hit)
 # end GH2
@@ -95,6 +98,20 @@ def player_hit(player, enemy):
     enemy.destroy()
 sprites.on_overlap(SpriteKind.player, SpriteKind.enemy, player_hit)
 sprites.on_overlap(SpriteKind.player, SpriteKind.enemy_projectile, player_hit)
+
+def activate_shield(player, shield):
+    shield.set_position(player.x, player.y)
+    shield.follow(player, 500, 500)
+    shield.set_image(assets.image("shield"))
+    shield.scale = 2
+    shield.z = 10
+sprites.on_overlap(SpriteKind.player, SpriteKind.food, activate_shield)
+
+def destroy_shield(projectile, shield):
+    if shield.overlaps_with(ship):
+        shield.destroy(effects.disintegrate)
+        projectile.destroy()
+sprites.on_overlap(SpriteKind.enemy_projectile, SpriteKind.food, destroy_shield)
 
 def player_fire():
     sprites.create_projectile_from_sprite(assets.image("player projectile"), ship, 0, player_shot_speed)
